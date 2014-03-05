@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Management.Automation;
-using System.Threading.Tasks;
 
 namespace PsIniFile
 {
@@ -13,8 +9,7 @@ namespace PsIniFile
     public class GetIniFile: PSCmdlet
     {
         [DllImport("kernel32")]
-        private static extern int GetPrivateProfileString(string section,
-                 string key,string def, StringBuilder retVal, int size,string filePath);
+        private static extern int GetPrivateProfileString(string section, string key, string def, StringBuilder retVal, int size, string filePath);
 
         [Parameter(Mandatory = true)]
         public string Section { get; set; }
@@ -31,20 +26,29 @@ namespace PsIniFile
             // otherwise it will search for it on the Windows search path.
             // If the IniFile exists in the current directory, then that's the
             // one the user probably wants, so 
-            bool fileExists = File.Exists(IniFile);
-            bool pathRooted = Path.IsPathRooted(IniFile);
+            var pathRooted = Path.IsPathRooted(IniFile);
 
-            WriteObject("fileExists:" + fileExists + " pathRooted:" + pathRooted);
-
-            if (fileExists && !pathRooted)
+            if (!pathRooted)
             {
-                //var cwd = Directory.GetCurrentDirectory();
-                var cwd = this.SessionState.Path.CurrentFileSystemLocation;
-                IniFile = Path.Combine(cwd.Path, IniFile);
-                WriteObject("Expanded IniFile to " + IniFile);
+                var cwd = SessionState.Path.CurrentFileSystemLocation;
+                var localFile = Path.Combine(cwd.Path, IniFile);
+                var fileExists = File.Exists(localFile);
+
+                if (fileExists)
+                {
+                    IniFile = localFile;
+                    WriteDebug("File exists in working directory.");
+                }
+                else
+                {
+                    WriteDebug("File does not exist in working directory, GetPrivateProfileString will use Windows search path.");
+                }
             }
-            var result = WritePrivateProfileString(Section, Key, Value, IniFile);
-            WriteObject("The result is " + result, true);
+
+            var sb = new StringBuilder(255);
+            var result = GetPrivateProfileString(Section, Key, "", sb, 255, IniFile);
+            WriteDebug("GetPrivateProfileString return code: " + result + " Return Value: " + sb);
+            WriteObject(sb.ToString(), false);
         }
     }
 }

@@ -1,20 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Management;
-using System.Management.Automation;
+﻿using System.Management.Automation;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using System.IO;
 
 namespace PsIniFile
 {
     // http://stackoverflow.com/questions/13897918/how-can-i-get-the-current-directory-in-powershell-cmdlet
-
     // http://www.codeproject.com/Articles/1990/INI-Class-using-C
-
-
 
     [Cmdlet(VerbsCommon.Set, "IniFile")]
     public class SetIniFile: PSCmdlet
@@ -41,20 +32,20 @@ namespace PsIniFile
             // otherwise it will search for it on the Windows search path.
             // If the IniFile exists in the current directory, then that's the
             // one the user probably wants, so 
-            bool fileExists = File.Exists(IniFile);
-            bool pathRooted = Path.IsPathRooted(IniFile);
+            var fileExists = File.Exists(IniFile);
+            var pathRooted = Path.IsPathRooted(IniFile);
 
-            WriteObject("fileExists:" + fileExists + " pathRooted:" + pathRooted);
+            WriteDebug("fileExists:" + fileExists + " pathRooted:" + pathRooted);
 
             if (fileExists && !pathRooted)
             {
-                //var cwd = Directory.GetCurrentDirectory();
-                var cwd = this.SessionState.Path.CurrentFileSystemLocation;
+                var cwd = SessionState.Path.CurrentFileSystemLocation;
                 IniFile = Path.Combine(cwd.Path, IniFile);
-                WriteObject("Expanded IniFile to " + IniFile);
+                WriteDebug("Expanded IniFile to " + IniFile);
             }
-            var result = WritePrivateProfileString(Section, Key, Value, IniFile);
-            WriteObject("The result is " + result, true);
+
+            var returnCode = WritePrivateProfileString(Section, Key, Value, IniFile);
+            WriteDebug("WritePrivateProfileString return code: " + returnCode);
         }
     }
 }
