@@ -1,4 +1,5 @@
-﻿using System.Management.Automation;
+﻿using System;
+using System.Management.Automation;
 using System.Runtime.InteropServices;
 
 namespace PsIniFile
@@ -25,7 +26,12 @@ namespace PsIniFile
         {
             IniFile = Utils.ExpandIniFileToFullyQualifiedPath(SessionState, IniFile);
             var returnCode = WritePrivateProfileString(Section, Key, Value, IniFile);
-            WriteVerbose("WritePrivateProfileString return code: " + returnCode);
+            if (returnCode == 0)
+            {
+                var exception = new InvalidOperationException("Error return code returned by WritePrivateProfileString: " + returnCode);
+                ThrowTerminatingError(new ErrorRecord(exception, "WriteProfileProfileStringError", ErrorCategory.InvalidOperation, null));
+            }
+            WriteVerbose("WritePrivateProfileString return code x: " + returnCode);
         }
     }
 }
